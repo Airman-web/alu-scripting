@@ -15,7 +15,7 @@ def count_words(subreddit, word_list, after="", words_count={}):
     if res.status_code != 200:
         return
 
-    json_res = res.json()  # chch
+    json_res = res.json()  # change to json
     after = json_res.get("data").get("after")
     has_next = after is not None
     hot_titles = []
@@ -50,4 +50,3 @@ def count_words(subreddit, word_list, after="", words_count={}):
 
         for i in range(len(words_count)):
             print("{}: {}".format(words_count[i][0], words_count[i][1]))
-            
