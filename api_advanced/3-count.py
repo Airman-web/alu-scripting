@@ -5,7 +5,9 @@ import requests
 
 def count_words(subreddit, word_list, after="", words_count={}):
     """ "Doc"""
-    url = "https://www.reddit.com/r/{}/hot.json?limit=100".format(subreddit)
+    url = "https://www.reddit.com/r/{}/hot.json?limit=100".format(
+        subreddit
+    )
     header = {"User-Agent": "Mozilla/5.0"}
     param = {"after": after}
     res = requests.get(url, headers=header, params=param)
@@ -23,8 +25,10 @@ def count_words(subreddit, word_list, after="", words_count={}):
         words_count = {word: 0 for word in words}
 
     hot_articles = json_res.get("data").get("children")
-    [hot_titles.append(article.get("data").get("title"))
-      for article in hot_articles]
+    [
+        hot_titles.append(article.get("data").get("title"))
+        for article in hot_articles
+    ]
 
     # loop through all titles
     for i in range(len(hot_titles)):
@@ -36,8 +40,9 @@ def count_words(subreddit, word_list, after="", words_count={}):
     if has_next:
         return count_words(subreddit, word_list, after, words_count)
     else:
-        words_count = dict(filter(lambda item: item[1] != 0,
-                                   words_count.items()))
+        words_count = dict(
+            filter(lambda item: item[1] != 0, words_count.items())
+        )
 
         words_count = sorted(
             words_count.items(), key=lambda item: item[1], reverse=True
@@ -45,4 +50,3 @@ def count_words(subreddit, word_list, after="", words_count={}):
 
         for i in range(len(words_count)):
             print("{}: {}".format(words_count[i][0], words_count[i][1]))
-            
