@@ -21,13 +21,8 @@ def count_words(subreddit, word_list, after=None, counts=None):
             if word_lower not in counts:
                 counts[word_lower] = 0
 
-    if subreddit is None or not isinstance(subreddit, str):
-        return
-
     url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
-    headers = {
-        'User-Agent': 'Python:subreddit.word.count:v1.0 (by /u/user)'
-    }
+    headers = {'User-Agent': 'My User Agent 1.0'}
     params = {'limit': 100}
 
     if after:
@@ -35,37 +30,34 @@ def count_words(subreddit, word_list, after=None, counts=None):
 
     try:
         response = requests.get(url, headers=headers, params=params,
-                                allow_redirects=False, timeout=10)
+                                allow_redirects=False)
 
         if response.status_code != 200:
-            if not after:
-                return
             return
 
         data = response.json()
-        posts = data.get('data', {}).get('children', [])
+        children = data.get('data', {}).get('children', [])
         after = data.get('data', {}).get('after')
 
-        for post in posts:
-            title = post.get('data', {}).get('title', '').lower()
+        for child in children:
+            title = child.get('data', {}).get('title', '').lower()
             words = title.split()
 
             for word in words:
-                word_clean = word.strip('._!?;,')
+                clean_word = word.rstrip('._!?;,')
 
-                if word_clean in counts:
-                    counts[word_clean] += 1
+                if clean_word in counts:
+                    counts[clean_word] += 1
 
         if after:
             count_words(subreddit, word_list, after, counts)
         else:
-            filtered_counts = {k: v for k, v in counts.items() if v > 0}
-
-            sorted_counts = sorted(filtered_counts.items(),
+            filtered = {k: v for k, v in counts.items() if v > 0}
+            sorted_counts = sorted(filtered.items(),
                                    key=lambda x: (-x[1], x[0]))
 
             for word, count in sorted_counts:
                 print("{}: {}".format(word, count))
 
-    except (requests.RequestException, ValueError, KeyError):
+    except Exception:
         return
