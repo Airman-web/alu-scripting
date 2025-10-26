@@ -1,63 +1,46 @@
-#!/usr/bin/python3
-"""Module to recursively query Reddit API and count keyword occurrences."""
 
+#!/usr/bin/python3
+""""Doc"""
 import requests
 
 
-def count_words(subreddit, word_list, after=None, counts=None):
-    """
-    Recursively query Reddit API and print sorted count of keywords.
+def count_words(subreddit, word_list, after="", words_count={}):
+    """ "Doc"""
+    url = "https://www.reddit.com/r/{}/hot.json?limit=100".format(subreddit)
+    header = {"User-Agent": "Mozilla/5.0"}
+    param = {"after": after}
+    res = requests.get(url, headers=header, params=param)
 
-    Args:
-        subreddit (str): The name of the subreddit
-        word_list (list): List of keywords to count (case-insensitive)
-        after (str): The 'after' parameter for pagination
-        counts (dict): Dictionary to accumulate word counts
-    """
-    if counts is None:
-        counts = {}
-        for word in word_list:
-            word_lower = word.lower()
-            if word_lower not in counts:
-                counts[word_lower] = 0
-
-    url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
-    headers = {'User-Agent': 'My User Agent 1.0'}
-    params = {'limit': 100}
-
-    if after:
-        params['after'] = after
-
-    try:
-        response = requests.get(url, headers=headers, params=params,
-                                allow_redirects=False)
-
-        if response.status_code != 200:
-            return
-
-        data = response.json()
-        children = data.get('data', {}).get('children', [])
-        after = data.get('data', {}).get('after')
-
-        for child in children:
-            title = child.get('data', {}).get('title', '').lower()
-            words = title.split()
-
-            for word in words:
-                clean_word = word.rstrip('._!?;,')
-
-                if clean_word in counts:
-                    counts[clean_word] += 1
-
-        if after:
-            count_words(subreddit, word_list, after, counts)
-        else:
-            filtered = {k: v for k, v in counts.items() if v > 0}
-            sorted_counts = sorted(filtered.items(),
-                                   key=lambda x: (-x[1], x[0]))
-
-            for word, count in sorted_counts:
-                print("{}: {}".format(word, count))
-
-    except Exception:
+    if res.status_code != 200:
         return
+
+    json_res = res.json()  # chch
+    after = json_res.get("data").get("after")
+    has_next = after is not None
+    hot_titles = []
+    words = [word.lower() for word in word_list]
+
+    if len(words_count) == 0:
+        words_count = {word: 0 for word in words}
+
+    hot_articles = json_res.get("data").get("children")
+    [hot_titles.append(article.get("data").get("title")) for article in hot_articles]
+
+    # loop through all titles
+    for i in range(len(hot_titles)):
+        for title_word in hot_titles[i].lower().split():
+            for word in words:
+                if word.lower() == title_word:
+                    words_count[word] = words_count.get(word) + 1
+
+    if has_next:
+        return count_words(subreddit, word_list, after, words_count)
+    else:
+        words_count = dict(filter(lambda item: item[1] != 0, words_count.items()))
+
+        words_count = sorted(
+            words_count.items(), key=lambda item: item[1], reverse=True
+        )
+
+        for i in range(len(words_count)):
+            print("{}: {}".format(words_count[i][0], words_count[i][1]))
