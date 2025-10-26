@@ -12,7 +12,6 @@ def top_ten(subreddit):
     )
 
     if res.status_code != 200:
-        print(None)
         return
 
     json_response = res.json()
